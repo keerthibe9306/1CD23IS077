@@ -6,37 +6,38 @@ import NotificationsPage from './pages/NotificationsPage';
 import PriorityPage from './pages/PriorityPage';
 import { logger } from './utils/logger';
 
+const appTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#124170'
+    },
+    secondary: {
+      main: '#f18701'
+    },
+    background: {
+      default: '#f5f7fa'
+    }
+  },
+  shape: {
+    borderRadius: 12
+  },
+  typography: {
+    fontFamily: '"Segoe UI", Tahoma, Geneva, Verdana, sans-serif',
+    h5: {
+      fontWeight: 700,
+      color: '#1a1a2e'
+    }
+  }
+});
+
 function App() {
   useEffect(() => {
-    logger('frontend', 'info', 'page', 'Application mounted');
+    logger('frontend', 'info', 'page', 'Application mounted and ready');
   }, []);
 
-  const theme = createTheme({
-    palette: {
-      mode: 'light',
-      primary: {
-        main: '#124170'
-      },
-      secondary: {
-        main: '#f18701'
-      },
-      background: {
-        default: '#f7f9fc'
-      }
-    },
-    shape: {
-      borderRadius: 14
-    },
-    typography: {
-      fontFamily: 'Segoe UI, Tahoma, sans-serif',
-      h5: {
-        fontWeight: 700
-      }
-    }
-  });
-
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <BrowserRouter>
         <NavigationBar />
