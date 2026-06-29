@@ -1,28 +1,15 @@
 function getWeight(notificationType) {
-  if (notificationType === 'Placement') {
-    return 3;
-  }
-
-  if (notificationType === 'Result') {
-    return 2;
-  }
-
-  if (notificationType === 'Event') {
-    return 1;
-  }
-
-  return 0;
+  const weights = { Placement: 3, Result: 2, Event: 1 };
+  return weights[notificationType] || 0;
 }
 
 function getRecencyScore(timestamp) {
-  const currentSeconds = Date.now() / 1000;
-  const notificationSeconds = new Date(timestamp).getTime() / 1000;
+  const nowInSeconds = Date.now() / 1000;
+  const notifSeconds = new Date(timestamp).getTime() / 1000;
 
-  if (!Number.isFinite(notificationSeconds)) {
-    return 0;
-  }
+  if (!Number.isFinite(notifSeconds)) return 0;
 
-  const ageInSeconds = Math.max(0, currentSeconds - notificationSeconds);
+  const ageInSeconds = Math.max(0, nowInSeconds - notifSeconds);
   return 1 / (1 + ageInSeconds / 3600);
 }
 
@@ -31,29 +18,26 @@ export function prioritySort(notifications, n) {
     return [];
   }
 
-  const requestedCount = Number.isFinite(n) && n > 0 ? n : notifications.length;
+  const count = Number.isFinite(n) && n > 0 ? n : notifications.length;
 
-  return [...notifications]
-    .map((notification) => {
-      const type = notification.notification_type || notification.type || '';
-      const timestamp = notification.timestamp || notification.createdAt || notification.created_at;
-      const weight = getWeight(type);
-      const recencyScore = getRecencyScore(timestamp);
-      const priorityScore = weight + recencyScore;
+  const scored = notifications.map((item) => {
+    const type = item.notification_type || item.type || '';
+    const ts = item.timestamp || item.createdAt || item.created_at;
+    const weight = getWeight(type);
+    const recency = getRecencyScore(ts);
+    const priorityScore = weight + recency;
 
-      return {
-        ...notification,
-        priorityScore
-      };
-    })
-    .sort((left, right) => {
-      if (right.priorityScore !== left.priorityScore) {
-        return right.priorityScore - left.priorityScore;
-      }
+    return { ...item, priorityScore };
+  });
 
-      const leftTime = new Date(left.timestamp || left.createdAt || left.created_at).getTime();
-      const rightTime = new Date(right.timestamp || right.createdAt || right.created_at).getTime();
-      return rightTime - leftTime;
-    })
-    .slice(0, requestedCount);
+  scored.sort((a, b) => {
+    if (b.priorityScore !== a.priorityScore) {
+      return b.priorityScore - a.priorityScore;
+    }
+    const timeA = new Date(a.timestamp || a.createdAt || a.created_at).getTime();
+    const timeB = new Date(b.timestamp || b.createdAt || b.created_at).getTime();
+    return timeB - timeA;
+  });
+
+  return scored.slice(0, count);
 }
