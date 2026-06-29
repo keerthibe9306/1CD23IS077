@@ -5,9 +5,10 @@ import { logger } from '../utils/logger';
 
 export function usePriorityNotifications() {
   const [topCount, setTopCount] = useState(10);
-  const { notifications, loading, error, typeFilter, updateTypeFilter, reloadNotifications } = useNotifications('All');
+  const { notifications, loading, error, typeFilter, updateTypeFilter, loadNotifications } = useNotifications('All');
 
-  const prioritizedNotifications = useMemo(() => {
+  const prioritized = useMemo(() => {
+    if (notifications.length === 0) return [];
     logger('frontend', 'debug', 'utils', `Running priority sort for top ${topCount}`);
     return prioritySort(notifications, topCount);
   }, [notifications, topCount]);
@@ -18,13 +19,13 @@ export function usePriorityNotifications() {
 
   return {
     notifications,
-    prioritizedNotifications,
+    prioritized,
     loading,
     error,
     topCount,
     updateTopCount,
     typeFilter,
     updateTypeFilter,
-    reloadNotifications
+    loadNotifications
   };
 }
