@@ -15,53 +15,73 @@ import { usePriorityNotifications } from '../hooks/usePriorityNotifications';
 import { logger } from '../utils/logger';
 
 function PriorityPage() {
-  const { prioritizedNotifications, loading, error, topCount, updateTopCount, typeFilter, updateTypeFilter } =
-    usePriorityNotifications();
-  const [viewedIds, setViewedIds] = useState([]);
+  const {
+    prioritized,
+    loading,
+    error,
+    topCount,
+    updateTopCount,
+    typeFilter,
+    updateTypeFilter
+  } = usePriorityNotifications();
 
+  const [viewedIds, setViewedIds] = useState([]);
   const viewedSet = useMemo(() => new Set(viewedIds), [viewedIds]);
 
   const handleTopCountChange = (event) => {
-    const selectedTopCount = Number(event.target.value);
-    updateTopCount(selectedTopCount);
-    logger('frontend', 'debug', 'component', `Priority top count changed to ${selectedTopCount}`);
+    const val = Number(event.target.value);
+    updateTopCount(val);
+    logger('frontend', 'debug', 'component', `Priority count set to ${val}`);
   };
 
   const handleFilterChange = (event) => {
-    const selectedType = event.target.value;
-    updateTypeFilter(selectedType);
-    logger('frontend', 'debug', 'component', `Priority filter changed to ${selectedType}`);
+    const selected = event.target.value;
+    updateTypeFilter(selected);
+    logger('frontend', 'debug', 'component', `Priority filter changed to ${selected}`);
   };
 
-  const handleMarkViewed = (id) => {
-    if (viewedSet.has(id)) {
-      return;
-    }
+  const handleMarkViewed = (notifId) => {
+    if (viewedSet.has(notifId)) return;
+    setViewedIds((prev) => [...prev, notifId]);
+    logger('frontend', 'info', 'component', `Priority notification viewed: ${notifId}`);
+  };
 
-    setViewedIds((currentViewedIds) => [...currentViewedIds, id]);
-    logger('frontend', 'info', 'component', `Priority notification viewed: ${id}`);
+  const deriveId = (notification) => {
+    return notification.id
+      || notification.notification_id
+      || `${notification.message || notification.title || 'n'}-${notification.timestamp || notification.createdAt || notification.created_at}`;
   };
 
   return (
-    <Stack spacing={2.5}>
+    <Stack spacing={3}>
       <Typography variant="h5">Priority Inbox</Typography>
 
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <Box sx={{ width: { xs: '100%', sm: 220 } }}>
+        <Box sx={{ width: { xs: '100%', sm: 200 } }}>
           <FormControl fullWidth size="small">
             <InputLabel id="priority-count-label">Top N</InputLabel>
-            <Select labelId="priority-count-label" value={String(topCount)} label="Top N" onChange={handleTopCountChange}>
-              <MenuItem value="10">10</MenuItem>
-              <MenuItem value="15">15</MenuItem>
-              <MenuItem value="20">20</MenuItem>
+            <Select
+              labelId="priority-count-label"
+              value={String(topCount)}
+              label="Top N"
+              onChange={handleTopCountChange}
+            >
+              <MenuItem value="10">Top 10</MenuItem>
+              <MenuItem value="15">Top 15</MenuItem>
+              <MenuItem value="20">Top 20</MenuItem>
             </Select>
           </FormControl>
         </Box>
 
-        <Box sx={{ width: { xs: '100%', sm: 220 } }}>
+        <Box sx={{ width: { xs: '100%', sm: 200 } }}>
           <FormControl fullWidth size="small">
-            <InputLabel id="priority-filter-label">Filter</InputLabel>
-            <Select labelId="priority-filter-label" value={typeFilter} label="Filter" onChange={handleFilterChange}>
+            <InputLabel id="priority-filter-label">Filter by Type</InputLabel>
+            <Select
+              labelId="priority-filter-label"
+              value={typeFilter}
+              label="Filter by Type"
+              onChange={handleFilterChange}
+            >
               <MenuItem value="All">All</MenuItem>
               <MenuItem value="Event">Event</MenuItem>
               <MenuItem value="Result">Result</MenuItem>
@@ -72,33 +92,29 @@ function PriorityPage() {
       </Stack>
 
       {loading && (
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <CircularProgress size={26} />
-          <Typography>Building your priority inbox...</Typography>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 4 }}>
+          <CircularProgress size={28} />
+          <Typography>Building priority inbox...</Typography>
         </Stack>
       )}
 
       {!loading && error && <Alert severity="error">{error}</Alert>}
 
-      {!loading && !error && prioritizedNotifications.length === 0 && (
-        <Alert severity="info">No priority notifications found for this setup.</Alert>
+      {!loading && !error && prioritized.length === 0 && (
+        <Alert severity="info">No priority notifications match this criteria.</Alert>
       )}
 
-      {!loading && !error && prioritizedNotifications.length > 0 && (
+      {!loading && !error && prioritized.length > 0 && (
         <Stack spacing={1.5}>
-          {prioritizedNotifications.map((notification, index) => {
-            const notificationId =
-              notification.id ||
-              notification.notification_id ||
-              `${notification.message || notification.title || 'notification'}-${notification.timestamp || notification.createdAt || notification.created_at}`;
-
+          {prioritized.map((notif, idx) => {
+            const nid = deriveId(notif);
             return (
               <NotificationCard
-                key={notificationId}
-                notification={notification}
-                isViewed={viewedSet.has(notificationId)}
+                key={nid}
+                notification={notif}
+                isViewed={viewedSet.has(nid)}
                 onMarkViewed={handleMarkViewed}
-                rank={index + 1}
+                rank={idx + 1}
               />
             );
           })}

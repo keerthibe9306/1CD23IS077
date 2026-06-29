@@ -1,72 +1,92 @@
 import React from 'react';
-import { Card, CardActionArea, Chip, Stack, Typography } from '@mui/material';
+import { Card, CardActionArea, Chip, Stack, Typography, Box } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import FiberNewIcon from '@mui/icons-material/FiberNew';
 import { formatDistanceToNow } from 'date-fns';
 
-function getTypeColor(type) {
-  if (type === 'Placement') {
-    return { bg: '#dbeafe', text: '#1d4ed8' };
-  }
+const TYPE_STYLES = {
+  Placement: { bg: '#dbeafe', color: '#1d4ed8' },
+  Result: { bg: '#dcfce7', color: '#15803d' },
+  Event: { bg: '#ffedd5', color: '#c2410c' }
+};
 
-  if (type === 'Result') {
-    return { bg: '#dcfce7', text: '#15803d' };
-  }
-
-  return { bg: '#ffedd5', text: '#c2410c' };
-}
-
-function getTimestampValue(notification) {
+function getTimestamp(notification) {
   return notification.timestamp || notification.createdAt || notification.created_at;
 }
 
-function getMessageValue(notification) {
+function getMessage(notification) {
   return notification.message || notification.title || 'Untitled notification';
 }
 
-function getIdValue(notification) {
-  return notification.id || notification.notification_id || `${getMessageValue(notification)}-${getTimestampValue(notification)}`;
+function getNotificationId(notification) {
+  return notification.id || notification.notification_id || `${getMessage(notification)}-${getTimestamp(notification)}`;
 }
 
 function NotificationCard({ notification, isViewed, onMarkViewed, rank }) {
-  const notificationType = notification.notification_type || notification.type || 'Event';
-  const timestamp = getTimestampValue(notification);
-  const chipColors = getTypeColor(notificationType);
-  const relativeTime = timestamp ? formatDistanceToNow(new Date(timestamp), { addSuffix: true }) : 'Unknown time';
-  const message = getMessageValue(notification);
-  const id = getIdValue(notification);
+  const notifType = notification.notification_type || notification.type || 'Event';
+  const timestamp = getTimestamp(notification);
+  const chipStyle = TYPE_STYLES[notifType] || TYPE_STYLES.Event;
+  const message = getMessage(notification);
+  const cardId = getNotificationId(notification);
+
+  let relativeTime = 'Unknown time';
+  if (timestamp) {
+    try {
+      relativeTime = formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    } catch (_e) {
+      relativeTime = 'Unknown time';
+    }
+  }
 
   return (
     <Card
       sx={{
-        border: isViewed ? '1px solid #d1d5db' : '1px solid #bfdbfe',
-        backgroundColor: isViewed ? '#f9fafb' : '#eff6ff',
-        opacity: isViewed ? 0.78 : 1
+        border: isViewed ? '1px solid #d1d5db' : '2px solid #93c5fd',
+        backgroundColor: isViewed ? '#fafafa' : '#eff6ff',
+        opacity: isViewed ? 0.75 : 1,
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: 4,
+          transform: 'translateY(-1px)'
+        }
       }}
     >
-      <CardActionArea onClick={() => onMarkViewed(id)}>
-        <Stack spacing={1} sx={{ p: 2 }}>
+      <CardActionArea onClick={() => onMarkViewed(cardId)} sx={{ p: 2 }}>
+        <Stack spacing={1}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
             <Stack direction="row" spacing={1} alignItems="center">
-              {typeof rank === 'number' && <Chip label={`Rank #${rank}`} color="primary" size="small" />}
+              {typeof rank === 'number' && (
+                <Chip
+                  label={`#${rank}`}
+                  color="primary"
+                  size="small"
+                  sx={{ fontWeight: 700, minWidth: 40 }}
+                />
+              )}
               <Chip
-                label={notificationType}
+                label={notifType}
                 size="small"
                 sx={{
-                  backgroundColor: chipColors.bg,
-                  color: chipColors.text,
-                  fontWeight: 700
+                  backgroundColor: chipStyle.bg,
+                  color: chipStyle.color,
+                  fontWeight: 600
                 }}
               />
-              {isViewed ? <CheckCircleIcon color="success" fontSize="small" /> : <FiberNewIcon color="error" fontSize="small" />}
+              {isViewed ? (
+                <CheckCircleIcon sx={{ color: '#16a34a', fontSize: 20 }} />
+              ) : (
+                <FiberNewIcon sx={{ color: '#dc2626', fontSize: 20 }} />
+              )}
             </Stack>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {relativeTime}
             </Typography>
           </Stack>
-          <Typography variant="body1" sx={{ fontWeight: isViewed ? 500 : 700 }}>
-            {message}
-          </Typography>
+          <Box>
+            <Typography variant="body1" sx={{ fontWeight: isViewed ? 400 : 600 }}>
+              {message}
+            </Typography>
+          </Box>
         </Stack>
       </CardActionArea>
     </Card>
